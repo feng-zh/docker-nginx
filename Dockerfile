@@ -1,8 +1,8 @@
-FROM h3nrik/nginx-ldap:latest
+FROM hrak/nginx-ldap:latest
 
 LABEL maintainer "Feng Zhou <feng.zh@gmail.com>"
 
-ADD nginx-watch.sh /
+RUN apk add --update tar && rm -rf /var/lib/apt/lists/* /var/cache/apk/*
 
 ADD nginx.conf /etc/nginx/
 
