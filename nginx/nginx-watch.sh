@@ -16,7 +16,8 @@ dir='etc/nginx'
 
 # Get initial checksum values
 # Use fixed time to workaround glusterfs time change issue
-checksum_initial=$(tar --mtime='1970-01-01' --strip-components=2 --warning=none -C / -cf - $dir | md5sum | awk '{print $1}')
+# Use fixed sorting to workaround changes in glusterfs
+checksum_initial=$(tar --mtime='1970-01-01' --strip-components=2 --sort=name --warning=none -C / -cf - $dir | md5sum | awk '{print $1}')
 checksum_now=$checksum_initial
 
 # Daemon that checks the md5 sum of the directory
@@ -24,7 +25,7 @@ checksum_now=$checksum_initial
 # the nginx configuration is tested and reloaded on success
 while true
 do
-    checksum_now=$(tar --mtime='1970-01-01' --strip-components=2 --warning=none -C / -cf - $dir | md5sum | awk '{print $1}')
+    checksum_now=$(tar --mtime='1970-01-01' --strip-components=2 --sort=name --warning=none -C / -cf - $dir | md5sum | awk '{print $1}')
 
     if [ $checksum_initial != $checksum_now ]; then
         echo '[ NGINX ] A configuration file changed. Reloading...' 1>&2
