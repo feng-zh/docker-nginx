@@ -1,3 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+ME=$( basename "$0" )
+
+[ "${NGINX_CONFIG_MODE:-}" = "legacy" ] || exit 0
+
+touch /etc/nginx/nginx.conf 2>/dev/null || { echo >&2 "$ME: error: can not modify /etc/nginx/nginx.conf (read-only file system?)"; exit 0; }
+
+cat <<"EOF" > /etc/nginx/nginx.conf
 user  nobody;
 worker_processes  1;
 
@@ -29,4 +40,10 @@ http {
 
     include /etc/nginx/conf.d/*.conf;
 }
+EOF
 
+if [ -z "${NGINX_ENTRYPOINT_QUIET_LOGS:-}" ]; then
+    echo "$ME: info: use legacy nginx config /etc/nginx/nginx.conf (due to NGINX_CONFIG_MODE=legacy)"
+fi
+
+exit 0

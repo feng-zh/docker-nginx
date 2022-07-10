@@ -1,0 +1,46 @@
+name: Build Docker Images
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout sources
+        uses: actions/checkout@v3
+      - name: Generate Dockerfile
+        run: |
+          ./gen-Dockerfile.sh > Dockerfile
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            fengzhou/nginx
+          tags: |
+            type=ref,event=branch,enable=${{ github.ref != format('refs/heads/{0}', 'master') }}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+      - name: Update repo description
+        if: github.ref == 'refs/heads/master'
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: fengzhou/nginx

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ -n "${NGINX_WATCH_INTERVAL:-}" ] || exit 0
+
 # NGINX WATCH DAEMON
 #
 # Author: Devonte
@@ -23,20 +25,22 @@ checksum_now=$checksum_initial
 # Daemon that checks the md5 sum of the directory
 # ff the sums are different ( a file changed / added / deleted)
 # the nginx configuration is tested and reloaded on success
-while true
-do
-    checksum_now=$(tar --mtime='1970-01-01' --strip-components=2 --sort=name --warning=none -C / -cf - $dir | md5sum | awk '{print $1}')
+nginx_watching() {
+    while true
+    do
+        checksum_now=$(tar --mtime='1970-01-01' --strip-components=2 --sort=name --warning=none -C / -cf - $dir | md5sum | awk '{print $1}')
 
-    if [ $checksum_initial != $checksum_now ]; then
-        echo '[ NGINX ] A configuration file changed. Reloading...' 1>&2
-        nginx -t && nginx -s reload;
-    fi
+        if [ $checksum_initial != $checksum_now ]; then
+            echo '[ NGINX ] A configuration file changed. Reloading...' 1>&2
+            nginx -t && nginx -s reload;
+        fi
 
-    checksum_initial=$checksum_now
+        checksum_initial=$checksum_now
 
-    sleep 10
-done
+        sleep $NGINX_WATCH_INTERVAL
+    done
+}
 
+nginx_watching &
 
-
-
+exit 0
